@@ -152,7 +152,7 @@ Full configuration options:
 
             image:
                 service:    sonata.media.provider.image
-                resizer:    sonata.media.resizer.simple # sonata.media.resizer.square
+                resizer:    sonata.media.resizer.simple # sonata.media.resizer.square, sonata.media.resizer.crop
                 filesystem: sonata.media.filesystem.local
                 cdn:        sonata.media.cdn.server
                 generator:  sonata.media.generator.default
@@ -177,17 +177,6 @@ Full configuration options:
                 generator:  sonata.media.generator.default
                 thumbnail:  sonata.media.thumbnail.format
 
-        # The buzz implementation is deprecated, use a PSR http-client instead
-        buzz:
-            connector:  sonata.media.buzz.connector.file_get_contents # sonata.media.buzz.connector.curl
-
         http:
-            client:          'symfony_http_client'       # You need symfony/http-client for this
-            message_factory: 'nyholm.psr7.psr17_factory' # You need nyholm/psr7 for this
-
-        services:
-            symfony_http_client:
-                class: Symfony\Component\HttpClient\Psr18Client
-
-            nyholm.psr7.psr17_factory:
-                class: Nyholm\Psr7\Factory\Psr17Factory
+            client:          'sonata.media.http.base_client' # You need symfony/http-client for this
+            message_factory: 'sonata.media.http.base_message_factory' # You need nyholm/psr7 for this

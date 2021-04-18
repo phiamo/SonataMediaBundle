@@ -15,7 +15,6 @@ namespace Sonata\MediaBundle\DependencyInjection;
 
 use Aws\Sdk;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
-use Symfony\Component\Config\Definition\Builder\NodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -78,7 +77,6 @@ class Configuration implements ConfigurationInterface
         $this->addProvidersSection($node);
         $this->addExtraSection($node);
         $this->addModelSection($node);
-        $this->addBuzzSection($node);
         $this->addHttpClientSection($node);
         $this->addResizerSection($node);
         $this->addAdapterSection($node);
@@ -157,7 +155,19 @@ class Configuration implements ConfigurationInterface
                             ->end()
                         ->end()
 
-                        ->append($this->getCloudFrontCdnSection())
+                        ->arrayNode('cloudfront')
+                            ->children()
+                                ->scalarNode('path')
+                                    ->info('e.g. http://xxxxxxxxxxxxxx.cloudfront.net/uploads/media')
+                                    ->isRequired()
+                                ->end()
+                                ->scalarNode('distribution_id')->isRequired()->end()
+                                ->scalarNode('key')->isRequired()->end()
+                                ->scalarNode('secret')->isRequired()->end()
+                                ->scalarNode('region')->isRequired()->end()
+                                ->scalarNode('version')->isRequired()->end()
+                            ->end()
+                        ->end()
 
                         ->arrayNode('fallback')
                             ->children()
@@ -169,49 +179,6 @@ class Configuration implements ConfigurationInterface
                 ->end()
             ->end()
         ;
-    }
-
-    /**
-     * @todo: Remove this method when support for aws/aws-sdk-php < 3.0 is dropped
-     * and move the corresponding logic to `addCdnSection()`.
-     */
-    private function getCloudFrontCdnSection(): NodeDefinition
-    {
-        $treeBuilder = new TreeBuilder('cloudfront');
-
-        if (class_exists(Sdk::class)) {
-            // aws/aws-sdk-php >= 3.0
-            $node = $treeBuilder->getRootNode()
-                ->children()
-                    ->scalarNode('path')
-                        ->info('e.g. http://xxxxxxxxxxxxxx.cloudfront.net/uploads/media')
-                        ->isRequired()
-                    ->end()
-                    ->scalarNode('distribution_id')->isRequired()->end()
-                    ->scalarNode('key')->isRequired()->end()
-                    ->scalarNode('secret')->isRequired()->end()
-                    ->scalarNode('region')->isRequired()->end()
-                    ->scalarNode('version')->isRequired()->end()
-                ->end()
-            ;
-        } else {
-            // aws/aws-sdk-php < 3.0
-            $node = $treeBuilder->getRootNode()
-                ->children()
-                    ->scalarNode('path')
-                        ->info('e.g. http://xxxxxxxxxxxxxx.cloudfront.net/uploads/media')
-                        ->isRequired()
-                    ->end()
-                    ->scalarNode('distribution_id')->isRequired()->end()
-                    ->scalarNode('key')->isRequired()->end()
-                    ->scalarNode('secret')->isRequired()->end()
-                    ->scalarNode('region')->end()
-                    ->scalarNode('version')->end()
-                ->end()
-            ;
-        }
-
-        return $node;
     }
 
     private function addFilesystemSection(ArrayNodeDefinition $node): void
@@ -237,7 +204,7 @@ class Configuration implements ConfigurationInterface
                                 ->scalarNode('port')->defaultValue(21)->end()
                                 ->scalarNode('passive')->defaultValue(false)->end()
                                 ->scalarNode('create')->defaultValue(false)->end()
-                                ->scalarNode('mode')->defaultValue(\defined('FTP_BINARY') ? FTP_BINARY : false)->end()
+                                ->scalarNode('mode')->defaultValue(\defined('FTP_BINARY') ? \FTP_BINARY : false)->end()
                             ->end()
                         ->end()
 
@@ -512,29 +479,6 @@ class Configuration implements ConfigurationInterface
         ;
     }
 
-    private function addBuzzSection(ArrayNodeDefinition $node): void
-    {
-        $node
-            ->children()
-                ->arrayNode('buzz')
-                    ->addDefaultsIfNotSet()
-                    ->children()
-                        ->scalarNode('connector')->defaultValue('sonata.media.buzz.connector.curl')->end()
-                        ->arrayNode('client')
-                        ->addDefaultsIfNotSet()
-                        ->children()
-                            ->booleanNode('ignore_errors')->defaultValue(true)->end()
-                            ->scalarNode('max_redirects')->defaultValue(5)->end()
-                            ->scalarNode('timeout')->defaultValue(5)->end()
-                            ->booleanNode('verify_peer')->defaultValue(true)->end()
-                            ->scalarNode('proxy')->defaultNull()->end()
-                        ->end()
-                    ->end()
-                ->end()
-            ->end()
-        ;
-    }
-
     private function addHttpClientSection(ArrayNodeDefinition $node): void
     {
         $node
@@ -543,11 +487,11 @@ class Configuration implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->scalarNode('client')
-                            ->defaultValue('sonata.media.http.buzz_client')
+                            ->defaultValue('sonata.media.http.base_client')
                             ->info('Alias of the http client.')
                         ->end()
                         ->scalarNode('message_factory')
-                            ->defaultNull()
+                            ->defaultValue('sonata.media.http.base_message_factory')
                             ->info('Alias of the message factory.')
                         ->end()
                     ->end()

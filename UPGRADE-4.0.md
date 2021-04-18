@@ -1,6 +1,30 @@
 UPGRADE FROM 3.x to 4.0
 =======================
 
+### Sonata\DatagridBundle\Pager\PageableInterface
+
+  Usages of `Sonata\Doctrine\Model\PageableManagerInterface` were replaced in favor of `Sonata\DatagridBundle\Pager\PageableInterface`.
+
+### Dependencies
+
+- Drop support for `kriswallsmith/buzz`
+
+  If you are using media provider services with Buzz, you MUST create a custom service based on the Buzz client and add it to configuration:
+
+       sonata_media:
+           http:
+               client: 'your_custom.buzz_client' # Psr\Http\Client\ClientInterface
+               message_factory: 'your_custom.message_facory' # Psr\Http\Message\RequestFactoryInterface
+
+- Drop support for `sonata-project/datagrid-bundle` < 3.0.
+
+  If you are extending these methods, you MUST add argument and return type declarations:
+
+    - `Sonata\MediaBundle\Entity\GalleryManager::getPager()`
+    - `Sonata\MediaBundle\Entity\MediaManager::getPager()`
+    - `Sonata\MediaBundle\Model\GalleryManager::getPager()`
+    - `Sonata\MediaBundle\Model\MediaManager::getPager()`
+
 ## Deprecations
 
 All the deprecated code introduced on 3.x is removed on 4.0.
